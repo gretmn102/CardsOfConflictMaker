@@ -1,7 +1,26 @@
-source https://www.nuget.org/api/v2
+storage:none
+source https://api.nuget.org/v3/index.json
 
-framework: >= net461
-nuget FAKE
-nuget FParsec
+framework: net461, netstandard2.0, netcoreapp3.1
 nuget FSharp.Core
 nuget Fuchu
+nuget FParsec
+nuget HtmlAgilityPack
+nuget Newtonsoft.Json
+nuget Newtonsoft.Json.Bson
+nuget YamlDotNet
+nuget TextCopy
+
+source https://gitlab.com/api/v4/projects/28574921/packages/nuget/index.json
+storage: none
+nuget FSharpMyExt
+
+group Build
+    source https://api.nuget.org/v3/index.json
+    framework: netstandard2.0
+    storage: none
+
+    nuget FSharp.Core 4.7.2
+    nuget Fake.Core.Target
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem

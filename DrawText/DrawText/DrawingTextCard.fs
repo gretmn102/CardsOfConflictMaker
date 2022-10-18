@@ -426,19 +426,3 @@ let start dstFileName textColor backColor =
         img.Save(sprintf "output\\%s%d.png" dstFileName i)
         img.Dispose()
     )
-
-open System.Windows.Forms
-let test4 () =
-    do
-        let r = new RichTextBox()
-        r.Text <- "sdf"
-        r.BackColor <- Color.White
-        r.ForeColor <- Color.Red
-        r.Invalidate()
-        r.Update()
-        let form = new Form()
-        form.Controls.Add r
-        form.Show()
-        let img = new Bitmap(r.Bounds.Width, r.Bounds.Height)
-        r.DrawToBitmap(img, r.Bounds)
-        img.Save "output\\img0.png"
