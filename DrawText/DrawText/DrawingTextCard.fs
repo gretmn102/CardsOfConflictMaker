@@ -1,8 +1,6 @@
 module DrawingTextCard
-// #if INTERACTIVE
-// #load @"E:\Project\Tts tools\TtsTools\TtsTools\Tools.fs"
-// #endif
 open FsharpMyExtension
+open FsharpMyExtension.Either
 open System.Drawing
 
 let defineTextSize =
@@ -375,54 +373,55 @@ module SliceText =
         |> Either.map (List.map (List.collect (splitSimple count)))
     // final 20 "12345\\n 5234\n1234*italic,* ** bold — ** kjs ~kj~ __as__ jh"
 
-let fontName = "Times New Roman"
-let fontSize = 20.f
-let charactersOnLine = 22
-let w, h = 325, 325
+type Settings =
+    {
+        Width: int
+        Height: int
+        TextColor: Color
+        BackgroundColor: Color
+        ColumnsCount: int
+        RowsCount: int
+        FontName: string
+        FontSize: float32
+        MaxCharactersInLine: int
+        GridColor: Color
+    }
+    static member Default =
+        {
+            Width = 325
+            Height = 325
+            TextColor = Color.Black
+            BackgroundColor = Color.White
+            ColumnsCount = 4
+            RowsCount = 5
+            FontName = "Times New Roman"
+            FontSize = 20.f
+            MaxCharactersInLine = 22
+            GridColor = Color.Black
+        }
 
-let fonts =
-    let f (fontStyle:FontStyle) =
-        fontStyle, new System.Drawing.Font(fontName, fontSize, fontStyle)
+let start (settings: Settings) descriptionCardsRaw =
+    let fonts =
+        let f (fontStyle: FontStyle) =
+            fontStyle, new Font(settings.FontName, settings.FontSize, fontStyle)
 
-    Map [
-        f FontStyle.Regular
-        f FontStyle.Italic
-        f FontStyle.Bold
-        f FontStyle.Strikeout
-        f FontStyle.Underline
-    ]
-let test1 () =
-    do
-        use img =
-            [
-                ["ww w", FontStyle.Bold]
-                ["ww", FontStyle.Bold; " w", FontStyle.Bold]
-            ]
-            |> drawText5 fonts Color.Black Color.White
-        img.Save "output\\img0.png"
-// test1()
-let start dstFileName textColor backColor =
+        Map [
+            f FontStyle.Regular
+            f FontStyle.Italic
+            f FontStyle.Bold
+            f FontStyle.Strikeout
+            f FontStyle.Underline
+        ]
+
     let xs =
-        // System.IO.File.ReadLines(sprintf "Info\\%s.txt" dstFileName)
-        // |> Seq.filter (fun x -> x <> "")
-        // |> Seq.map (
-        //     SliceText.final charactersOnLine
-        //     >> FsharpMyExtension.Either.Either.get)
-        // |> List.ofSeq
-        System.IO.File.ReadAllText (sprintf "Info\\%s.txt" dstFileName)
-        |> SliceText.final charactersOnLine
-        |> FsharpMyExtension.Either.Either.get
-    xs |> List.map (
-        // Slice.start 22
-        // >> List.map (flip comma FontStyle.Regular >> List.singleton)
-        drawText6 (float32 w, float32 h) fonts textColor backColor
+        descriptionCardsRaw
+        |> SliceText.final settings.MaxCharactersInLine
+        |> Either.get
+    xs
+    |> List.map (
+        drawText6 (float32 settings.Width, float32 settings.Height) fonts settings.TextColor settings.BackgroundColor
         >> fun img ->
-            // let imgBase = new Bitmap(w, h)
             let r = Rectangle(0, 0, img.Width, img.Height)
             img, r
         )
-    |> Grid.drawed textColor false w h 4 5
-    |> Seq.iteri (fun i img ->
-        img.Save(sprintf "output\\%s%d.png" dstFileName i)
-        img.Dispose()
-    )
+    |> Grid.drawed settings.GridColor false settings.Width settings.Height settings.ColumnsCount settings.RowsCount

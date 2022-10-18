@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Grid.fs" />
     <Compile Include="DrawingTextCard.fs" />
+    <Compile Include="ColorExt.fs" />
     <Compile Include="DrawText.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
