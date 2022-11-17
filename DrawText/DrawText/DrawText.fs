@@ -1,5 +1,6 @@
 module DrawText
 open Argu
+open FsharpMyExtension
 
 open DrawingTextCard
 
