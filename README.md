@@ -17,9 +17,9 @@ TextCardsMaker.exe --width=120 --height=120 --rows-count=2 --columns-count=2 car
 
 То программа создаст два файла:
 
-![](docs/card0.png)
+![](./Docs/card0.png)
 
-![](docs/card1.png)
+![](./Docs/card1.png)
 
 ## Параметры
 ```
