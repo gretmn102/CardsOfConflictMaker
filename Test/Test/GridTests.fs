@@ -19,6 +19,14 @@ module Data2 =
     let gridWidth = Grid.getGridLength gridEdgeWidth cellWidth columnsCount
     let gridHeight = Grid.getGridLength gridEdgeWidth cellHeight rowsCount
 
+module Data4 =
+    let gridEdgeColor = Color.Red
+    let gridEdgeWidth = 4
+    let cellWidth, cellHeight = 15, 30
+    let columnsCount, rowsCount = 2, 3
+    let gridWidth = Grid.getGridLength gridEdgeWidth cellWidth columnsCount
+    let gridHeight = Grid.getGridLength gridEdgeWidth cellHeight rowsCount
+
 [<Tests>]
 let drawGridTests =
     testList "drawGridTests" [
@@ -41,6 +49,17 @@ let drawGridTests =
 
             let exp =
                 use img = Bitmap.FromFile("mocks/2/emptyGridMock.png") :?> Bitmap
+                Bitmap.toArray img
+
+            Assert.Equal("", exp, act)
+        testCase "base 4" <| fun () ->
+            let act =
+                use image = new Bitmap(Data4.gridWidth, Data4.gridHeight)
+                Grid.drawGrid Data4.gridEdgeColor Data4.gridEdgeWidth (Data4.cellWidth, Data4.cellHeight) image
+                Bitmap.toArray image
+
+            let exp =
+                use img = Bitmap.FromFile("mocks/4/emptyGridMock.png") :?> Bitmap
                 Bitmap.toArray img
 
             Assert.Equal("", exp, act)
