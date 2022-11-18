@@ -385,6 +385,7 @@ type Settings =
         FontSize: float32
         MaxCharactersInLine: int
         GridColor: Color
+        GridEdgeWidth: int
     }
     static member Default =
         {
@@ -398,6 +399,7 @@ type Settings =
             FontSize = 20.f
             MaxCharactersInLine = 22
             GridColor = Color.Black
+            GridEdgeWidth = 3
         }
 
 let start (settings: Settings) descriptionCardsRaw =
@@ -424,4 +426,4 @@ let start (settings: Settings) descriptionCardsRaw =
             let r = Rectangle(0, 0, img.Width, img.Height)
             img, r
         )
-    |> Grid.drawed settings.GridColor false settings.Width settings.Height settings.ColumnsCount settings.RowsCount
+    |> Grid.drawImagesOnGrids settings.GridColor settings.GridEdgeWidth false (settings.Width, settings.Height) (settings.ColumnsCount, settings.RowsCount)

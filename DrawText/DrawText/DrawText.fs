@@ -14,7 +14,6 @@ let start (settings: Settings) destinationFolder destinationFileName cardsDescri
         settings
         (System.IO.File.ReadAllText cardsDescriptionsPath)
     |> Seq.iteri (fun i img ->
-
         img.Save(sprintf "%s\\%s%d.png" destinationFolder destinationFileName i)
         img.Dispose()
     )

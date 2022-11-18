@@ -11,6 +11,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="mocks\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="GridTests.fs" />
     <Compile Include="Test.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
