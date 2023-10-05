@@ -8,24 +8,24 @@ module Data1 =
     let gridEdgeWidth = 1
     let cellWidth, cellHeight = 10, 20
     let columnsCount, rowsCount = 3, 2
-    let gridWidth = Grid.getGridLength gridEdgeWidth cellWidth columnsCount
-    let gridHeight = Grid.getGridLength gridEdgeWidth cellHeight rowsCount
+    let gridWidth = Grid.Grid.calcLength gridEdgeWidth cellWidth columnsCount
+    let gridHeight = Grid.Grid.calcLength gridEdgeWidth cellHeight rowsCount
 
 module Data2 =
     let gridEdgeColor = Color.Red
     let gridEdgeWidth = 2
     let cellWidth, cellHeight = 15, 30
     let columnsCount, rowsCount = 2, 3
-    let gridWidth = Grid.getGridLength gridEdgeWidth cellWidth columnsCount
-    let gridHeight = Grid.getGridLength gridEdgeWidth cellHeight rowsCount
+    let gridWidth = Grid.Grid.calcLength gridEdgeWidth cellWidth columnsCount
+    let gridHeight = Grid.Grid.calcLength gridEdgeWidth cellHeight rowsCount
 
 module Data4 =
     let gridEdgeColor = Color.Red
     let gridEdgeWidth = 4
     let cellWidth, cellHeight = 15, 30
     let columnsCount, rowsCount = 2, 3
-    let gridWidth = Grid.getGridLength gridEdgeWidth cellWidth columnsCount
-    let gridHeight = Grid.getGridLength gridEdgeWidth cellHeight rowsCount
+    let gridWidth = Grid.Grid.calcLength gridEdgeWidth cellWidth columnsCount
+    let gridHeight = Grid.Grid.calcLength gridEdgeWidth cellHeight rowsCount
 
 [<Tests>]
 let drawGridTests =
@@ -33,7 +33,7 @@ let drawGridTests =
         testCase "base" <| fun () ->
             let act =
                 use image = new Bitmap(Data1.gridWidth, Data1.gridHeight)
-                Grid.drawGrid Data1.gridEdgeColor Data1.gridEdgeWidth (Data1.cellWidth, Data1.cellHeight) image
+                Grid.Grid.draw Data1.gridEdgeColor Data1.gridEdgeWidth (Data1.cellWidth, Data1.cellHeight) image
                 Bitmap.toArray image
 
             let exp =
@@ -44,7 +44,7 @@ let drawGridTests =
         testCase "base 2" <| fun () ->
             let act =
                 use image = new Bitmap(Data2.gridWidth, Data2.gridHeight)
-                Grid.drawGrid Data2.gridEdgeColor Data2.gridEdgeWidth (Data2.cellWidth, Data2.cellHeight) image
+                Grid.Grid.draw Data2.gridEdgeColor Data2.gridEdgeWidth (Data2.cellWidth, Data2.cellHeight) image
                 Bitmap.toArray image
 
             let exp =
@@ -55,7 +55,7 @@ let drawGridTests =
         testCase "base 4" <| fun () ->
             let act =
                 use image = new Bitmap(Data4.gridWidth, Data4.gridHeight)
-                Grid.drawGrid Data4.gridEdgeColor Data4.gridEdgeWidth (Data4.cellWidth, Data4.cellHeight) image
+                Grid.Grid.draw Data4.gridEdgeColor Data4.gridEdgeWidth (Data4.cellWidth, Data4.cellHeight) image
                 Bitmap.toArray image
 
             let exp =
@@ -70,7 +70,7 @@ let getCellsFromGridTests =
     testList "getCellsFromGridTests" [
         testCase "gridEdgeWidth = 1" <| fun () ->
             let (cellWidthAct, cellHeightAct), coordsAct =
-                Grid.getCellsFromGrid Data1.gridEdgeWidth (Data1.columnsCount, Data1.rowsCount) (Data1.gridWidth, Data1.gridHeight)
+                Grid.Grid.getCells Data1.gridEdgeWidth (Data1.columnsCount, Data1.rowsCount) (Data1.gridWidth, Data1.gridHeight)
 
             Assert.Equal("", Data1.cellWidth, cellWidthAct)
             Assert.Equal("", Data1.cellHeight, cellHeightAct)
@@ -86,7 +86,7 @@ let getCellsFromGridTests =
 
         testCase "gridEdgeWidth = 2" <| fun () ->
             let (cellWidthAct, cellHeightAct), coordsAct =
-                Grid.getCellsFromGrid Data2.gridEdgeWidth (Data2.columnsCount, Data2.rowsCount) (Data2.gridWidth, Data2.gridHeight)
+                Grid.Grid.getCells Data2.gridEdgeWidth (Data2.columnsCount, Data2.rowsCount) (Data2.gridWidth, Data2.gridHeight)
 
             Assert.Equal("", Data2.cellWidth, cellWidthAct)
             Assert.Equal("", Data2.cellHeight, cellHeightAct)
