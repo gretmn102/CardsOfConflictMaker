@@ -21,7 +21,7 @@ type Grid =
 [<RequireQualifiedAccess>]
 module Grid =
     let generateCellLocations lineWidth cellsCount cellLength =
-        List.unfold
+        Array.unfold
             (fun (st, i) ->
                 if i > 0 then
                     Some (st + lineWidth, (st + cellLength + lineWidth, i - 1))
@@ -59,10 +59,10 @@ module Grid =
         let rowLocations = generateCellLocations lineWidth rowsCount rowHeight
         let cells =
             rowLocations
-            |> List.fold
+            |> Array.fold
                 (fun st y ->
                     columnLocations
-                    |> List.fold
+                    |> Array.fold
                         (fun (m, i) x ->
                             let r = Rectangle(x, y, columnWidth, rowHeight)
                             Map.add i r m, i + 1)
@@ -110,36 +110,47 @@ let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir:
         bmp.Save(path)
     )
 
-let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) =
-    let rowLocations, columnLocations = Grid.generateCellsLocations grid
+type CellsMatrix = (Bitmap * Rectangle) [,]
 
-    let cellLocations =
-        let f =
-            if flipByHor then
-                fun y -> columnLocations |> List.map (fun x -> x, y) |> List.rev
-            else
-                fun y -> columnLocations |> List.map (fun x -> x, y)
-        rowLocations |> List.collect f
-
-    let cellsMatrixSize = grid.CellsMatrixSize
-
-    let drawImagesOnGrid srcImageAndRectangles =
-        let gridWidth, gridHeight = Grid.calcSize grid
-
-        let imageGrid = new Bitmap(gridWidth, gridHeight)
-
-        use g = Graphics.FromImage imageGrid
-
-        Grid.draw imageGrid grid
-
-        Seq.zip cellLocations srcImageAndRectangles
-        |> Seq.iter (fun ((cellX, cellY), (srcImage, srcRectangle)) ->
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+[<RequireQualifiedAccess>]
+module CellsMatrix =
+    let draw (grid: Grid) dstImage (cellsMatrix: CellsMatrix) =
+        let rowLocations, columnLocations = Grid.generateCellsLocations grid
+        use g = Graphics.FromImage dstImage
+        let cellsMatrixSize = grid.CellsMatrixSize
+        cellsMatrix
+        |> Array2D.iteri (fun y x (srcImage, srcRectangle) ->
+            let cellY, cellX = rowLocations[y], columnLocations[x]
             g.DrawImage(srcImage,
                 Rectangle(cellX, cellY, cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight),
                 srcRectangle,
                 GraphicsUnit.Pixel
             )
         )
+
+let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) : Bitmap seq =
+    let cellsMatrixSize = grid.CellsMatrixSize
+
+    let drawImagesOnGrid (srcImageAndRectangles: (Bitmap * Rectangle) []) =
+        let gridWidth, gridHeight = Grid.calcSize grid
+        let imageGrid = new Bitmap(gridWidth, gridHeight)
+        Grid.draw imageGrid grid
+        let cellsMatrix =
+            let arrayArray =
+                srcImageAndRectangles
+                |> Array.chunkBySize cellsMatrixSize.ColumnsCount
+
+            let arrayArray =
+                if flipByHor then
+                    Array.map Array.rev arrayArray
+                else
+                    arrayArray
+
+            arrayArray
+            |> Array2D.ofArAr
+
+        CellsMatrix.draw grid imageGrid cellsMatrix
         imageGrid
 
     Seq.chunkBySize (cellsMatrixSize.ColumnsCount * cellsMatrixSize.RowsCount) imgs
