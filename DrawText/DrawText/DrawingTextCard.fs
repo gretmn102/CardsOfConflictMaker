@@ -3,6 +3,8 @@ open FsharpMyExtension
 open FsharpMyExtension.Either
 open System.Drawing
 
+open Grid
+
 let defineTextSize =
     let img = new Bitmap(1, 1)
     fun font str ->
@@ -419,6 +421,21 @@ let start (settings: Settings) descriptionCardsRaw =
         descriptionCardsRaw
         |> SliceText.final settings.MaxCharactersInLine
         |> Either.get
+
+    let grid =
+        {
+            CellsMatrixSize =
+                {
+                    RowHeight = settings.Height
+                    RowsCount = settings.RowsCount
+                    ColumnWidth = settings.Width
+                    ColumnsCount = settings.ColumnsCount
+                }
+
+            LineWidth = settings.GridLineWidth
+            LineColor = settings.GridColor
+        }
+
     xs
     |> List.map (
         drawText6 (float32 settings.Width, float32 settings.Height) fonts settings.TextColor settings.BackgroundColor
@@ -426,4 +443,4 @@ let start (settings: Settings) descriptionCardsRaw =
             let r = Rectangle(0, 0, img.Width, img.Height)
             img, r
         )
-    |> Grid.drawImagesOnGrids settings.GridColor settings.GridLineWidth false (settings.Width, settings.Height) (settings.ColumnsCount, settings.RowsCount)
+    |> drawImagesOnGrids false grid

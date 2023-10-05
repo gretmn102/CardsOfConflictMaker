@@ -3,29 +3,41 @@ open FsharpMyExtension
 open Fuchu
 open System.Drawing
 
+open Grid
+
 module Data1 =
-    let gridLineColor = Color.Red
-    let gridLineWidth = 1
-    let cellWidth, cellHeight = 10, 20
-    let columnsCount, rowsCount = 3, 2
-    let gridWidth = Grid.Grid.calcLength gridLineWidth cellWidth columnsCount
-    let gridHeight = Grid.Grid.calcLength gridLineWidth cellHeight rowsCount
+    let grid =
+        {
+            CellsMatrixSize =
+                {
+                    RowHeight = 20
+                    RowsCount = 2
+                    ColumnWidth = 10
+                    ColumnsCount = 3
+                }
+
+            LineWidth = 1
+            LineColor = Color.Red
+        }
+
+    let (gridWidth, gridHeight) as size = Grid.calcSize grid
 
 module Data2 =
-    let gridLineColor = Color.Red
-    let gridLineWidth = 2
-    let cellWidth, cellHeight = 15, 30
-    let columnsCount, rowsCount = 2, 3
-    let gridWidth = Grid.Grid.calcLength gridLineWidth cellWidth columnsCount
-    let gridHeight = Grid.Grid.calcLength gridLineWidth cellHeight rowsCount
+    let grid =
+        {
+            CellsMatrixSize =
+                {
+                    RowHeight = 30
+                    RowsCount = 3
+                    ColumnWidth = 15
+                    ColumnsCount = 2
+                }
 
-module Data4 =
-    let gridLineColor = Color.Red
-    let gridLineWidth = 4
-    let cellWidth, cellHeight = 15, 30
-    let columnsCount, rowsCount = 2, 3
-    let gridWidth = Grid.Grid.calcLength gridLineWidth cellWidth columnsCount
-    let gridHeight = Grid.Grid.calcLength gridLineWidth cellHeight rowsCount
+            LineWidth = 2
+            LineColor = Color.Red
+        }
+
+    let (gridWidth, gridHeight) as size = Grid.calcSize grid
 
 [<Tests>]
 let drawGridTests =
@@ -33,7 +45,7 @@ let drawGridTests =
         testCase "base" <| fun () ->
             let act =
                 use image = new Bitmap(Data1.gridWidth, Data1.gridHeight)
-                Grid.Grid.draw Data1.gridLineColor Data1.gridLineWidth (Data1.cellWidth, Data1.cellHeight) image
+                Grid.draw image Data1.grid
                 Bitmap.toArray image
 
             let exp =
@@ -41,10 +53,11 @@ let drawGridTests =
                 Bitmap.toArray img
 
             Assert.Equal("", exp, act)
+
         testCase "base 2" <| fun () ->
             let act =
                 use image = new Bitmap(Data2.gridWidth, Data2.gridHeight)
-                Grid.Grid.draw Data2.gridLineColor Data2.gridLineWidth (Data2.cellWidth, Data2.cellHeight) image
+                Grid.draw image Data2.grid
                 Bitmap.toArray image
 
             let exp =
@@ -52,10 +65,27 @@ let drawGridTests =
                 Bitmap.toArray img
 
             Assert.Equal("", exp, act)
+
         testCase "base 4" <| fun () ->
             let act =
-                use image = new Bitmap(Data4.gridWidth, Data4.gridHeight)
-                Grid.Grid.draw Data4.gridLineColor Data4.gridLineWidth (Data4.cellWidth, Data4.cellHeight) image
+                let grid =
+                    {
+                        CellsMatrixSize =
+                            {
+                                RowHeight = 30
+                                RowsCount = 3
+                                ColumnWidth = 15
+                                ColumnsCount = 2
+                            }
+
+                        LineWidth = 4
+                        LineColor = Color.Red
+                    }
+
+                let gridWidth, gridHeight = Grid.calcSize grid
+
+                use image = new Bitmap(gridWidth, gridHeight)
+                Grid.draw image grid
                 Bitmap.toArray image
 
             let exp =
@@ -68,32 +98,38 @@ let drawGridTests =
 [<Tests>]
 let getCellsFromGridTests =
     testList "getCellsFromGridTests" [
-        testCase "gridLineWidth = 1" <| fun () ->
-            let (cellWidthAct, cellHeightAct), coordsAct =
-                Grid.Grid.getCells Data1.gridLineWidth (Data1.columnsCount, Data1.rowsCount) (Data1.gridWidth, Data1.gridHeight)
+        testCase "grid.LineWidth = 1" <| fun () ->
+            let cellsMatrixSize = Data1.grid.CellsMatrixSize
+            let (columnWidthAct, rowHeigthAct) as columnRowAct, coordsAct =
+                Grid.getCells
+                    Data1.grid.LineWidth
+                    (cellsMatrixSize.ColumnsCount, cellsMatrixSize.RowsCount)
+                    Data1.size
 
-            Assert.Equal("", Data1.cellWidth, cellWidthAct)
-            Assert.Equal("", Data1.cellHeight, cellHeightAct)
+            Assert.Equal("", (cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight), columnRowAct)
 
             let coordsExp =
                 let create x y =
-                    Rectangle(x, y, cellWidthAct, cellHeightAct)
+                    Rectangle(x, y, columnWidthAct, rowHeigthAct)
                 [(0, create 1 1); (1, create 12 1); (2, create 23 1);
                  (3, create 1 22); (4, create 12 22); (5, create 23 22)]
                 |> Map
 
             Assert.Equal("", coordsExp, coordsAct)
 
-        testCase "gridLineWidth = 2" <| fun () ->
-            let (cellWidthAct, cellHeightAct), coordsAct =
-                Grid.Grid.getCells Data2.gridLineWidth (Data2.columnsCount, Data2.rowsCount) (Data2.gridWidth, Data2.gridHeight)
+        testCase "grid.LineWidth = 2" <| fun () ->
+            let cellsMatrixSize = Data2.grid.CellsMatrixSize
+            let (columnWidthAct, rowHeigthAct) as columnRowAct, coordsAct =
+                Grid.getCells
+                    Data2.grid.LineWidth
+                    (cellsMatrixSize.ColumnsCount, cellsMatrixSize.RowsCount)
+                    Data2.size
 
-            Assert.Equal("", Data2.cellWidth, cellWidthAct)
-            Assert.Equal("", Data2.cellHeight, cellHeightAct)
+            Assert.Equal("", (cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight), columnRowAct)
 
             let coordsExp =
                 let create x y =
-                    Rectangle(x, y, cellWidthAct, cellHeightAct)
+                    Rectangle(x, y, columnWidthAct, rowHeigthAct)
                 [(0, create 2 2); (1, create 19 2);
                  (2, create 2 34); (3, create 19 34);
                  (4, create 2 66); (5, create 19 66)]
@@ -116,14 +152,11 @@ let drawImagesOnGridTests =
             let act =
                 use img =
                     Grid.drawImagesOnGrids
-                        Data1.gridLineColor
-                        Data1.gridLineWidth
                         false
-                        (Data1.cellWidth, Data1.cellHeight)
-                        (Data1.columnsCount, Data1.rowsCount)
+                        Data1.grid
                         images
                     |> Seq.exactlyOne
-
+                img.Save("mocks/1/gridMockAct.png")
                 Bitmap.toArray img
 
             let exp =
@@ -143,11 +176,8 @@ let drawImagesOnGridTests =
             let act =
                 use img =
                     Grid.drawImagesOnGrids
-                        Data2.gridLineColor
-                        Data2.gridLineWidth
                         false
-                        (Data2.cellWidth, Data2.cellHeight)
-                        (Data2.columnsCount, Data2.rowsCount)
+                        Data2.grid
                         images
                     |> Seq.exactlyOne
 

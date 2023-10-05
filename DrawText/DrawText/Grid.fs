@@ -2,10 +2,25 @@ module Grid
 open System.Drawing
 open FsharpMyExtension
 
+type CellsMatrixSize =
+    {
+        RowsCount: int
+        RowHeight: int
+        ColumnsCount: int
+        ColumnWidth: int
+    }
+
+type Grid =
+    {
+        CellsMatrixSize: CellsMatrixSize
+        LineWidth: int
+        LineColor: Color
+    }
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module Grid =
-    let generateCellCoords lineWidth cellsCount cellLength =
+    let generateCellLocations lineWidth cellsCount cellLength =
         List.unfold
             (fun (st, i) ->
                 if i > 0 then
@@ -16,18 +31,33 @@ module Grid =
             )
             (0, cellsCount)
 
+    let generateCellsLocations (grid: Grid) =
+        let cellsMatrixSize = grid.CellsMatrixSize
+        let columnLocations =
+            generateCellLocations grid.LineWidth cellsMatrixSize.ColumnsCount cellsMatrixSize.ColumnWidth
+        let rowLocations =
+            generateCellLocations grid.LineWidth cellsMatrixSize.RowsCount cellsMatrixSize.RowHeight
+        rowLocations, columnLocations
+
+    let calcSize (grid: Grid) =
+        let calcLength lineWidth cellLength cellsCount =
+            cellLength * cellsCount + (cellsCount - 1) * lineWidth + lineWidth * 2
+        let cellsMatrixSize = grid.CellsMatrixSize
+        let gridWidth =
+            calcLength grid.LineWidth cellsMatrixSize.ColumnWidth cellsMatrixSize.ColumnsCount
+        let gridHeight =
+            calcLength grid.LineWidth cellsMatrixSize.RowHeight cellsMatrixSize.RowsCount
+        gridWidth, gridHeight
+
     let calcCellLength lineWidth gridLength cellsCount =
         (gridLength - (cellsCount * lineWidth) - lineWidth) / cellsCount
 
-    let calcLength lineWidth cellLength cellsCount =
-        cellLength * cellsCount + (cellsCount - 1) * lineWidth + lineWidth * 2
-
     /// returns `(cellWidth, cellHeight) * cellLocation [] []`
-    let getCells lineWidth (columnsCount, rowsCount) (imageWithGridWidth, imageWithGridHeight) =
-        let cellWidth = calcCellLength lineWidth imageWithGridWidth columnsCount
-        let cellHeight = calcCellLength lineWidth imageWithGridHeight rowsCount
-        let columnLocations = generateCellCoords lineWidth columnsCount cellWidth
-        let rowLocations = generateCellCoords lineWidth rowsCount cellHeight
+    let getCells lineWidth (columnsCount, rowsCount) (gridWidth, gridHeight) =
+        let columnWidth = calcCellLength lineWidth gridWidth columnsCount
+        let columnLocations = generateCellLocations lineWidth columnsCount columnWidth
+        let rowHeight = calcCellLength lineWidth gridHeight rowsCount
+        let rowLocations = generateCellLocations lineWidth rowsCount rowHeight
         let cells =
             rowLocations
             |> List.fold
@@ -35,14 +65,14 @@ module Grid =
                     columnLocations
                     |> List.fold
                         (fun (m, i) x ->
-                            let r = Rectangle(x + lineWidth, y + lineWidth, cellWidth, cellHeight)
+                            let r = Rectangle(x + lineWidth, y + lineWidth, columnWidth, rowHeight)
                             Map.add i r m, i + 1)
                         st
                 )
                 (Map.empty, 0)
-        (cellWidth, cellHeight), fst cells
+        (columnWidth, rowHeight), fst cells
 
-    let draw (gridColor: Color) lineWidth (cellWidth, cellHeight) (image: Bitmap) =
+    let draw (image: Bitmap) (grid: Grid) =
         let lines lineWidth cellWidth linesCount =
             Seq.unfold
                 (fun (st, count) ->
@@ -54,12 +84,14 @@ module Grid =
                 (lineWidth / 2, linesCount)
 
         use g = Graphics.FromImage image
-        use pen = new Pen(gridColor, float32 lineWidth)
+        use pen = new Pen(grid.LineColor, float32 grid.LineWidth)
 
-        lines lineWidth cellWidth (image.Width / cellWidth + 1)
-        |> Seq.iter (fun x -> g.DrawLine(pen, x, 0, x, image.Height))
-        lines lineWidth cellHeight (image.Height / cellHeight + 1)
+        let cellsMatrixSize = grid.CellsMatrixSize
+
+        lines grid.LineWidth cellsMatrixSize.RowHeight (cellsMatrixSize.RowsCount + 1)
         |> Seq.iter (fun x -> g.DrawLine(pen, 0, x, image.Width, x))
+        lines grid.LineWidth cellsMatrixSize.ColumnWidth (cellsMatrixSize.ColumnsCount + 1)
+        |> Seq.iter (fun x -> g.DrawLine(pen, x, 0, x, image.Height))
 
 let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
     use imageWithGrid = new Bitmap(path)
@@ -79,9 +111,11 @@ let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir:
         bmp.Save(path)
     )
 
-let drawImagesOnGrids gridColor gridLineWidth flipByHor (cellWidth, cellHeight) (columnsCount, rowsCount) (imgs: (Bitmap * Rectangle) seq) =
-    let columnLocations = Grid.generateCellCoords gridLineWidth columnsCount cellWidth |> List.map ((+) gridLineWidth)
-    let rowLocations = Grid.generateCellCoords gridLineWidth rowsCount cellHeight |> List.map ((+) gridLineWidth)
+let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) =
+    let rowLocations, columnLocations = Grid.generateCellsLocations grid
+
+    let rowLocations, columnLocations =
+        Pair.mapBoth (List.map ((+) grid.LineWidth)) (rowLocations, columnLocations)
 
     let cellLocations =
         let f =
@@ -91,30 +125,31 @@ let drawImagesOnGrids gridColor gridLineWidth flipByHor (cellWidth, cellHeight) 
                 fun y -> columnLocations |> List.map (fun x -> x, y)
         rowLocations |> List.collect f
 
+    let cellsMatrixSize = grid.CellsMatrixSize
+
     let drawImagesOnGrid srcImageAndRectangles =
-        let gridWidth = Grid.calcLength gridLineWidth cellWidth columnsCount
-        let gridHeight = Grid.calcLength gridLineWidth cellHeight rowsCount
+        let gridWidth, gridHeight = Grid.calcSize grid
 
         let imageGrid = new Bitmap(gridWidth, gridHeight)
 
         use g = Graphics.FromImage imageGrid
 
-        Grid.draw gridColor gridLineWidth (cellWidth, cellHeight) imageGrid
+        Grid.draw imageGrid grid
 
         Seq.zip cellLocations srcImageAndRectangles
         |> Seq.iter (fun ((cellX, cellY), (srcImage, srcRectangle)) ->
             g.DrawImage(srcImage,
-                Rectangle(cellX, cellY, cellWidth, cellHeight),
+                Rectangle(cellX, cellY, cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight),
                 srcRectangle,
                 GraphicsUnit.Pixel
             )
         )
         imageGrid
 
-    Seq.chunkBySize (columnsCount * rowsCount) imgs
+    Seq.chunkBySize (cellsMatrixSize.ColumnsCount * cellsMatrixSize.RowsCount) imgs
     |> Seq.map drawImagesOnGrid
 
-let drawImagesOnGridsAndSave flipByHor gridColor (cellWidth, cellHeight) (numWidth, numHeight) outputDir fileName imageFormat imgs =
+let drawImagesOnGridsAndSave flipByHor (grid: Grid) outputDir fileName imageFormat imgs =
     let ext =
         if imageFormat = Imaging.ImageFormat.Jpeg then ".jpeg"
         elif imageFormat = Imaging.ImageFormat.Png then ".png"
@@ -126,7 +161,7 @@ let drawImagesOnGridsAndSave flipByHor gridColor (cellWidth, cellHeight) (numWid
             path
             |> Path.changeFileNameWithoutExt (fun s -> sprintf "%s%s" s i)
 
-    drawImagesOnGrids Color.Black flipByHor gridColor (cellWidth, cellHeight) (numWidth, numHeight) imgs
+    drawImagesOnGrids flipByHor grid imgs
     |> List.ofSeq
     |> List.numerate (Some (fun _ -> ""))
     |> List.iter (fun (bmp, s) ->
