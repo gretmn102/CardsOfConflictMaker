@@ -24,8 +24,7 @@ module Grid =
         List.unfold
             (fun (st, i) ->
                 if i > 0 then
-                    let st' = st + cellLength - 1
-                    Some (st, (st' + 1 + lineWidth, i - 1))
+                    Some (st + lineWidth, (st + cellLength + lineWidth, i - 1))
                 else
                     None
             )
@@ -65,7 +64,7 @@ module Grid =
                     columnLocations
                     |> List.fold
                         (fun (m, i) x ->
-                            let r = Rectangle(x + lineWidth, y + lineWidth, columnWidth, rowHeight)
+                            let r = Rectangle(x, y, columnWidth, rowHeight)
                             Map.add i r m, i + 1)
                         st
                 )
@@ -113,9 +112,6 @@ let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir:
 
 let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) =
     let rowLocations, columnLocations = Grid.generateCellsLocations grid
-
-    let rowLocations, columnLocations =
-        Pair.mapBoth (List.map ((+) grid.LineWidth)) (rowLocations, columnLocations)
 
     let cellLocations =
         let f =
