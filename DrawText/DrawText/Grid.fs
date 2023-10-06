@@ -76,49 +76,43 @@ module Grid =
         lines grid.LineWidth cellsMatrixSize.RowHeight (cellsMatrixSize.RowsCount + 1)
         |> Seq.iter (fun x -> g.DrawLine(pen, 0, x, image.Width, x))
 
-let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
-    use imageWithGrid = new Bitmap(path)
-
-    let columnWidth, rowHeight =
-        Grid.calcColumnRowSize gridLineWidth (columnsCount, rowsCount) (imageWithGrid.Width, imageWithGrid.Height)
-
-    let grid =
-        {
-            CellsMatrixSize =
-                {
-                    ColumnWidth = columnWidth
-                    ColumnsCount = columnsCount
-                    RowHeight = rowHeight
-                    RowsCount = rowsCount
-                }
-            LineWidth = gridLineWidth
-            LineColor = Color.Black
-        }
-
-    let columnLocations, rowLocations = Grid.generateCellsLocations grid
-
-    let cell = Rectangle(0, 0, columnWidth, rowHeight)
-
-    System.IO.Directory.CreateDirectory outputDir |> ignore
-
-    rowLocations
-    |> Array.iteri (fun i y ->
-        columnLocations
-        |> Array.iteri (fun j x ->
-            use bmp = new Bitmap(columnWidth, columnWidth)
-            use g = Graphics.FromImage bmp
-            let r = Rectangle(x, y, columnWidth, rowHeight)
-            g.DrawImage(imageWithGrid, cell, r, GraphicsUnit.Pixel)
-            let path = System.IO.Path.Combine(outputDir, sprintf "%d.png" (j + columnWidth * i))
-            bmp.Save(path)
-        )
-    )
-
 type CellsMatrix = (Bitmap * Rectangle) [,]
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 [<RequireQualifiedAccess>]
 module CellsMatrix =
+    let ofImage gridLineWidth gridLineColor (columnsCount, rowsCount) (imageWithGrid: Bitmap) : Grid * CellsMatrix =
+        let columnWidth, rowHeight =
+            Grid.calcColumnRowSize gridLineWidth (columnsCount, rowsCount) (imageWithGrid.Width, imageWithGrid.Height)
+
+        let grid =
+            {
+                CellsMatrixSize =
+                    {
+                        ColumnWidth = columnWidth
+                        ColumnsCount = columnsCount
+                        RowHeight = rowHeight
+                        RowsCount = rowsCount
+                    }
+                LineWidth = gridLineWidth
+                LineColor = gridLineColor
+            }
+
+        let columnLocations, rowLocations = Grid.generateCellsLocations grid
+
+        let cellsMatrix =
+            rowLocations
+            |> Array.map (fun y ->
+                columnLocations
+                |> Array.map (fun x ->
+                    let r = Rectangle(x, y, columnWidth, rowHeight)
+                    imageWithGrid, r
+                )
+            )
+            |> Array2D.ofArAr
+
+        grid, cellsMatrix
+
     let draw (grid: Grid) dstImage (cellsMatrix: CellsMatrix) =
         let columnLocations, rowLocations = Grid.generateCellsLocations grid
         use g = Graphics.FromImage dstImage
@@ -132,6 +126,31 @@ module CellsMatrix =
                 GraphicsUnit.Pixel
             )
         )
+
+let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
+    use imageWithGrid = new Bitmap(path)
+    let grid, cellsMatrix =
+        CellsMatrix.ofImage
+            gridLineWidth
+            Color.Black
+            (columnsCount, rowsCount)
+            imageWithGrid
+
+    System.IO.Directory.CreateDirectory outputDir |> ignore
+
+    let columnWidth, rowHeight =
+        grid.CellsMatrixSize.ColumnWidth, grid.CellsMatrixSize.RowHeight
+
+    let dstRect = Rectangle(0, 0, columnWidth, rowHeight)
+
+    cellsMatrix
+    |> Array2D.iteri (fun i j (srcBitmap, srcRect) ->
+        use bmp = new Bitmap(columnWidth, rowHeight)
+        use g = Graphics.FromImage bmp
+        g.DrawImage(srcBitmap, dstRect, srcRect, GraphicsUnit.Pixel)
+        let path = System.IO.Path.Combine(outputDir, sprintf "%d.png" (j + columnWidth * i))
+        bmp.Save(path)
+    )
 
 let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) : Bitmap seq =
     let cellsMatrixSize = grid.CellsMatrixSize
