@@ -48,28 +48,12 @@ module Grid =
             calcLength grid.LineWidth cellsMatrixSize.RowHeight cellsMatrixSize.RowsCount
         gridWidth, gridHeight
 
-    let calcCellLength lineWidth gridLength cellsCount =
-        (gridLength - (cellsCount * lineWidth) - lineWidth) / cellsCount
-
-    /// returns `(cellWidth, cellHeight) * cellLocation [] []`
-    let getCells lineWidth (columnsCount, rowsCount) (gridWidth, gridHeight) =
-        let columnWidth = calcCellLength lineWidth gridWidth columnsCount
-        let columnLocations = generateCellLocations lineWidth columnsCount columnWidth
+    let calcColumnRowSize lineWidth (columnsCount, rowsCount) (gridWidth, gridHeight) =
+        let calcCellLength lineWidth gridLength cellsCount =
+            (gridLength - (cellsCount * lineWidth) - lineWidth) / cellsCount
         let rowHeight = calcCellLength lineWidth gridHeight rowsCount
-        let rowLocations = generateCellLocations lineWidth rowsCount rowHeight
-        let cells =
-            rowLocations
-            |> Array.fold
-                (fun st y ->
-                    columnLocations
-                    |> Array.fold
-                        (fun (m, i) x ->
-                            let r = Rectangle(x, y, columnWidth, rowHeight)
-                            Map.add i r m, i + 1)
-                        st
-                )
-                (Map.empty, 0)
-        (columnWidth, rowHeight), fst cells
+        let columnWidth = calcCellLength lineWidth gridWidth columnsCount
+        columnWidth, rowHeight
 
     let draw (image: Bitmap) (grid: Grid) =
         let lines lineWidth cellWidth linesCount =
@@ -94,20 +78,40 @@ module Grid =
 
 let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
     use imageWithGrid = new Bitmap(path)
-    let (cellWidth, cellHeight), m =
-        Grid.getCells gridLineWidth (columnsCount, rowsCount) (imageWithGrid.Width, imageWithGrid.Height)
 
-    let cell = Rectangle(0, 0, cellWidth, cellHeight)
+    let columnWidth, rowHeight =
+        Grid.calcColumnRowSize gridLineWidth (columnsCount, rowsCount) (imageWithGrid.Width, imageWithGrid.Height)
+
+    let grid =
+        {
+            CellsMatrixSize =
+                {
+                    RowHeight = rowHeight
+                    RowsCount = rowsCount
+                    ColumnWidth = columnWidth
+                    ColumnsCount = columnsCount
+                }
+            LineWidth = gridLineWidth
+            LineColor = Color.Black
+        }
+
+    let rowLocations, columnLocations = Grid.generateCellsLocations grid
+
+    let cell = Rectangle(0, 0, columnWidth, rowHeight)
 
     System.IO.Directory.CreateDirectory outputDir |> ignore
 
-    m
-    |> Seq.iter (fun (KeyValue(i, v)) ->
-        use bmp = new Bitmap(cellWidth, cellHeight)
-        use g = Graphics.FromImage bmp
-        g.DrawImage(imageWithGrid, cell, v, GraphicsUnit.Pixel)
-        let path = System.IO.Path.Combine(outputDir, sprintf "%d.png" i)
-        bmp.Save(path)
+    rowLocations
+    |> Array.iteri (fun i y ->
+        columnLocations
+        |> Array.iteri (fun j x ->
+            use bmp = new Bitmap(columnWidth, columnWidth)
+            use g = Graphics.FromImage bmp
+            let r = Rectangle(x, y, columnWidth, rowHeight)
+            g.DrawImage(imageWithGrid, cell, r, GraphicsUnit.Pixel)
+            let path = System.IO.Path.Combine(outputDir, sprintf "%d.png" (j + columnWidth * i))
+            bmp.Save(path)
+        )
     )
 
 type CellsMatrix = (Bitmap * Rectangle) [,]

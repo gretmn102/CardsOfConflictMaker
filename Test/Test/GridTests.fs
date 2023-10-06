@@ -96,46 +96,49 @@ let drawGridTests =
     ]
 
 [<Tests>]
-let getCellsFromGridTests =
-    testList "getCellsFromGridTests" [
+let generateCellsLocationsTests =
+    testList "generateCellsLocationsTests" [
         testCase "grid.LineWidth = 1" <| fun () ->
-            let cellsMatrixSize = Data1.grid.CellsMatrixSize
-            let (columnWidthAct, rowHeigthAct) as columnRowAct, coordsAct =
-                Grid.getCells
-                    Data1.grid.LineWidth
-                    (cellsMatrixSize.ColumnsCount, cellsMatrixSize.RowsCount)
-                    Data1.size
+            let act =
+                Grid.generateCellsLocations Data1.grid
+            let exp =
+                let rowLocations, columnLocations =
+                    ([| 1; 22 |],
+                     [| 1; 12; 23 |])
+                rowLocations, columnLocations
 
-            Assert.Equal("", (cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight), columnRowAct)
-
-            let coordsExp =
-                let create x y =
-                    Rectangle(x, y, columnWidthAct, rowHeigthAct)
-                [(0, create 1 1); (1, create 12 1); (2, create 23 1);
-                 (3, create 1 22); (4, create 12 22); (5, create 23 22)]
-                |> Map
-
-            Assert.Equal("", coordsExp, coordsAct)
+            Assert.Equal("", act, exp)
 
         testCase "grid.LineWidth = 2" <| fun () ->
-            let cellsMatrixSize = Data2.grid.CellsMatrixSize
-            let (columnWidthAct, rowHeigthAct) as columnRowAct, coordsAct =
-                Grid.getCells
-                    Data2.grid.LineWidth
-                    (cellsMatrixSize.ColumnsCount, cellsMatrixSize.RowsCount)
-                    Data2.size
+            let act =
+                Grid.generateCellsLocations Data2.grid
+            let exp =
+                let rowLocations, columnLocations =
+                    ([| 2; 34; 66 |],
+                     [| 2; 19 |])
+                rowLocations, columnLocations
 
-            Assert.Equal("", (cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight), columnRowAct)
+            Assert.Equal("", act, exp)
+    ]
 
-            let coordsExp =
-                let create x y =
-                    Rectangle(x, y, columnWidthAct, rowHeigthAct)
-                [(0, create 2 2); (1, create 19 2);
-                 (2, create 2 34); (3, create 19 34);
-                 (4, create 2 66); (5, create 19 66)]
-                |> Map
+[<Tests>]
+let calcColumnRowSizeTests =
+    let test (grid: Grid) =
+        let cellsMatrixSize = grid.CellsMatrixSize
+        let columnRowSizeAct =
+            Grid.calcColumnRowSize
+                grid.LineWidth
+                (cellsMatrixSize.ColumnsCount, cellsMatrixSize.RowsCount)
+                (Grid.calcSize grid)
 
-            Assert.Equal("", coordsExp, coordsAct)
+        Assert.Equal("", (cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight), columnRowSizeAct)
+
+    testList "calcColumnRowSizeTests" [
+        testCase "grid.LineWidth = 1" <| fun () ->
+            test Data1.grid
+
+        testCase "grid.LineWidth = 2" <| fun () ->
+            test Data2.grid
     ]
 
 [<Tests>]
