@@ -2,8 +2,7 @@ module DrawingTextCard
 open FsharpMyExtension
 open FsharpMyExtension.Either
 open System.Drawing
-
-open Grid
+open SimpleTable
 
 let defineTextSize =
     let img = new Bitmap(1, 1)
@@ -443,4 +442,4 @@ let start (settings: Settings) descriptionCardsRaw =
             let r = Rectangle(0, 0, img.Width, img.Height)
             img, r
         )
-    |> drawImagesOnGrids false grid
+    |> Grid.drawImagesOnGrids false grid
