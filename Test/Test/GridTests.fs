@@ -10,10 +10,10 @@ module Data1 =
         {
             CellsMatrixSize =
                 {
-                    RowHeight = 20
-                    RowsCount = 2
                     ColumnWidth = 10
                     ColumnsCount = 3
+                    RowHeight = 20
+                    RowsCount = 2
                 }
 
             LineWidth = 1
@@ -27,10 +27,10 @@ module Data2 =
         {
             CellsMatrixSize =
                 {
-                    RowHeight = 30
-                    RowsCount = 3
                     ColumnWidth = 15
                     ColumnsCount = 2
+                    RowHeight = 30
+                    RowsCount = 3
                 }
 
             LineWidth = 2
@@ -102,10 +102,7 @@ let generateCellsLocationsTests =
             let act =
                 Grid.generateCellsLocations Data1.grid
             let exp =
-                let rowLocations, columnLocations =
-                    ([| 1; 22 |],
-                     [| 1; 12; 23 |])
-                rowLocations, columnLocations
+                [| 1; 12; 23 |], [| 1; 22 |]
 
             Assert.Equal("", act, exp)
 
@@ -113,10 +110,7 @@ let generateCellsLocationsTests =
             let act =
                 Grid.generateCellsLocations Data2.grid
             let exp =
-                let rowLocations, columnLocations =
-                    ([| 2; 34; 66 |],
-                     [| 2; 19 |])
-                rowLocations, columnLocations
+                [| 2; 19 |], [| 2; 34; 66 |]
 
             Assert.Equal("", act, exp)
     ]

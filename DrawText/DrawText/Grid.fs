@@ -4,10 +4,10 @@ open FsharpMyExtension
 
 type CellsMatrixSize =
     {
-        RowsCount: int
-        RowHeight: int
         ColumnsCount: int
         ColumnWidth: int
+        RowsCount: int
+        RowHeight: int
     }
 
 type Grid =
@@ -36,7 +36,7 @@ module Grid =
             generateCellLocations grid.LineWidth cellsMatrixSize.ColumnsCount cellsMatrixSize.ColumnWidth
         let rowLocations =
             generateCellLocations grid.LineWidth cellsMatrixSize.RowsCount cellsMatrixSize.RowHeight
-        rowLocations, columnLocations
+        columnLocations, rowLocations
 
     let calcSize (grid: Grid) =
         let calcLength lineWidth cellLength cellsCount =
@@ -71,10 +71,10 @@ module Grid =
 
         let cellsMatrixSize = grid.CellsMatrixSize
 
-        lines grid.LineWidth cellsMatrixSize.RowHeight (cellsMatrixSize.RowsCount + 1)
-        |> Seq.iter (fun x -> g.DrawLine(pen, 0, x, image.Width, x))
         lines grid.LineWidth cellsMatrixSize.ColumnWidth (cellsMatrixSize.ColumnsCount + 1)
         |> Seq.iter (fun x -> g.DrawLine(pen, x, 0, x, image.Height))
+        lines grid.LineWidth cellsMatrixSize.RowHeight (cellsMatrixSize.RowsCount + 1)
+        |> Seq.iter (fun x -> g.DrawLine(pen, 0, x, image.Width, x))
 
 let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
     use imageWithGrid = new Bitmap(path)
@@ -86,16 +86,16 @@ let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir:
         {
             CellsMatrixSize =
                 {
-                    RowHeight = rowHeight
-                    RowsCount = rowsCount
                     ColumnWidth = columnWidth
                     ColumnsCount = columnsCount
+                    RowHeight = rowHeight
+                    RowsCount = rowsCount
                 }
             LineWidth = gridLineWidth
             LineColor = Color.Black
         }
 
-    let rowLocations, columnLocations = Grid.generateCellsLocations grid
+    let columnLocations, rowLocations = Grid.generateCellsLocations grid
 
     let cell = Rectangle(0, 0, columnWidth, rowHeight)
 
@@ -120,12 +120,12 @@ type CellsMatrix = (Bitmap * Rectangle) [,]
 [<RequireQualifiedAccess>]
 module CellsMatrix =
     let draw (grid: Grid) dstImage (cellsMatrix: CellsMatrix) =
-        let rowLocations, columnLocations = Grid.generateCellsLocations grid
+        let columnLocations, rowLocations = Grid.generateCellsLocations grid
         use g = Graphics.FromImage dstImage
         let cellsMatrixSize = grid.CellsMatrixSize
         cellsMatrix
         |> Array2D.iteri (fun y x (srcImage, srcRectangle) ->
-            let cellY, cellX = rowLocations[y], columnLocations[x]
+            let cellX, cellY = columnLocations[x], rowLocations[y]
             g.DrawImage(srcImage,
                 Rectangle(cellX, cellY, cellsMatrixSize.ColumnWidth, cellsMatrixSize.RowHeight),
                 srcRectangle,
