@@ -127,6 +127,11 @@ module CellsMatrix =
             )
         )
 
+module Table =
+    let draw (dstImage: Bitmap) (grid: Grid) (cellsMatrix: CellsMatrix) =
+        Grid.draw dstImage grid
+        CellsMatrix.draw grid dstImage cellsMatrix
+
 let getImagesFromGridAndSave gridLineWidth (columnsCount, rowsCount) (outputDir: string) (path: string) =
     use imageWithGrid = new Bitmap(path)
     let grid, cellsMatrix =
@@ -156,9 +161,6 @@ let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) : 
     let cellsMatrixSize = grid.CellsMatrixSize
 
     let drawImagesOnGrid (srcImageAndRectangles: (Bitmap * Rectangle) []) =
-        let gridWidth, gridHeight = Grid.calcSize grid
-        let imageGrid = new Bitmap(gridWidth, gridHeight)
-        Grid.draw imageGrid grid
         let cellsMatrix =
             let arrayArray =
                 srcImageAndRectangles
@@ -173,7 +175,11 @@ let drawImagesOnGrids flipByHor (grid: Grid) (imgs: (Bitmap * Rectangle) seq) : 
             arrayArray
             |> Array2D.ofArAr
 
-        CellsMatrix.draw grid imageGrid cellsMatrix
+        let gridWidth, gridHeight = Grid.calcSize grid
+        let imageGrid = new Bitmap(gridWidth, gridHeight)
+
+        Table.draw imageGrid grid cellsMatrix
+
         imageGrid
 
     Seq.chunkBySize (cellsMatrixSize.ColumnsCount * cellsMatrixSize.RowsCount) imgs
